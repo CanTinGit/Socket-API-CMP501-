@@ -52,7 +52,10 @@ int main()
 	// Create a TCP socket that we'll connect to the server
 	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
 	// FIXME: check for errors from socket
-
+	if (sock == INVALID_SOCKET)
+	{
+		printf("Failed to create socket!");
+	}
 	// Fill out a sockaddr_in structure with the address that
 	// we want to connect to.
 	sockaddr_in addr;
@@ -80,8 +83,17 @@ int main()
 	// We expect the server to send us a welcome message (WELCOME) when we connect.
 
 	// Receive a message.
-	recv(sock, buffer, MESSAGESIZE, 0);
+	int result = recv(sock, buffer, MESSAGESIZE, 0);
 	// FIXME: check for errors, or for unexpected message size
+	if (result != 0)
+	{
+		printf("fail to receive message!");
+	}
+	//for unexpected message size
+	if (buffer != WELCOME)
+	{
+		printf("received unexpected message size!");
+	}
 
 	// Check it's what we expected.
 	if (memcmp(buffer, WELCOME, strlen(WELCOME)) != 0)
@@ -101,19 +113,41 @@ int main()
 
 		// Copy the line into the buffer, filling the rest with dashes.
 		memset(buffer, '-', MESSAGESIZE);
-		memcpy(buffer, line.c_str(), line.size());
+		
 		// FIXME: if line.size() is bigger than the buffer it'll overflow (and likely corrupt memory)
-
+		bool illegal = true;
+		while (illegal){
+			if (line.size() > MESSAGESIZE)
+			{
+				printf("Your message is too long, please input less than 40 characters!\n");
+				printf("Type some text (\"quit\" to exit): ");
+				fflush(stdout);
+				std::getline(std::cin, line);
+			}
+			else
+			{
+				illegal = false;
+			}
+		}
+		memcpy(buffer, line.c_str(), line.size());
 		// Send the message to the server.
-		send(sock, buffer, MESSAGESIZE, 0);
+		int sendResult = send(sock, buffer, MESSAGESIZE, 0);
 		// FIXME: check for error from send
-
+		if (sendResult == SOCKET_ERROR)
+		{
+			printf("failed to send message");
+			break;
+		}
 		// Read a response back from the server.
 		int count = recv(sock, buffer, MESSAGESIZE, 0);
 		// FIXME: check for error from recv
 		if (count <= 0)
 		{
 			printf("Server closed connection\n");
+			break;
+		}
+		else if (count == SOCKET_ERROR){
+			printf("failed to receive message!");
 			break;
 		}
 
