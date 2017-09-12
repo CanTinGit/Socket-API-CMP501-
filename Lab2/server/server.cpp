@@ -51,6 +51,22 @@ int main()
 	// Create a TCP socket that we'll use to listen for connections.
 	SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 	// FIXME: we should test for error here
+	bool createSocket = false;
+	while (!createSocket)
+	{
+		
+		if (serverSocket == INVALID_SOCKET)
+		{
+			printf("failed to create server socket!");
+			SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+		}
+		else
+		{
+			createSocket = true;
+			printf("succeed to create server socket!\n");
+		}
+	}
+	
 
 	// Fill out a sockaddr_in structure to describe the address we'll listen on.
 	sockaddr_in serverAddr;
@@ -103,15 +119,22 @@ int main()
 
 		// Send a welcome message to the client.
 		memcpy(buffer, WELCOME, strlen(WELCOME));
-		send(clientSocket, buffer, MESSAGESIZE, 0);
+		int sendResult = send(clientSocket, buffer, MESSAGESIZE, 0);
 		// FIXME: check for errors from send
+		if (sendResult == SOCKET_ERROR){
+			printf("failed to send welcome message!");
+			break;
+		}
 
 		while (true)
 		{
 			// Receive as much data from the client as will fit in the buffer.
 			int count = recv(clientSocket, buffer, MESSAGESIZE, 0);
 			// FIXME: check for errors from recv
-
+			if (count == SOCKET_ERROR){
+				printf("failed to receive message!");
+				break;
+			}
 			if (count <= 0) {
 				printf("Client closed connection\n");
 				break;
@@ -133,8 +156,13 @@ int main()
 			printf("'\n");
 
 			// Send the same data back to the client.
-			send(clientSocket, buffer, MESSAGESIZE, 0);
+			sendResult = send(clientSocket, buffer, MESSAGESIZE, 0);
 			// FIXME: check for errors from send
+			if (sendResult == SOCKET_ERROR){
+				printf("failed to send welcome message!");
+				break;
+			}
+
 		}
 
 		printf("Closing connection\n");
